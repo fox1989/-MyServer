@@ -6,7 +6,6 @@ namespace Server
 {
     interface IHandler
     {
-        IHandler Create();
-
+       
     }
 }

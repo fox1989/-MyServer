@@ -1,5 +1,7 @@
-﻿using Server;
+﻿using Google.Protobuf;
+using Server;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -35,22 +37,76 @@ namespace Server
 
 
 
-            TCPService service = new TCPService("127.0.0.1", 10086);
+            //Message message = new Message();
+            //message.Id = 1;
+            //message.Handler = "dddd";
+            //message.AddParam("fox");
+
+
+
+
+            //int length = CodedOutputStream.ComputeMessageSize(message);
+            //byte[] bytes = new byte[length];
+            //CodedOutputStream cos = new CodedOutputStream(bytes);
+            //cos.WriteMessage(message);
+
+
+            //Type tm = message.GetType();
+
+            //Console.WriteLine(tm);
+
+
+
+
+
+            //Type t = Message.GetTypeByName(tm.FullName);
+
+
+            //Console.WriteLine(t + "    " + typeof(IMessage).IsAssignableFrom(t));
+
+            //CodedInputStream cis = new CodedInputStream(bytes);
+
+
+            //object obj = Activator.CreateInstance(t);
+
+
+
+            //cis.ReadMessage((IMessage)obj);
+            //Console.WriteLine(obj);
+
+
+            MessageQueue messageQueue = new MessageQueue(100, 100);
+            messageQueue.Start();
+
+
+            // TCPService service = new TCPService("127.0.0.1", 10086);
+
+
+            UDPService service = new UDPService("127.0.0.1", 10086);
 
             service.receiveMsg = (Session session, byte[] bytes) =>
             {
 
+
+
+
                 Message m = Message.Parser.ParseFrom(bytes);
 
+                MessageHandler mh = new MessageHandler(session, m);
+                messageQueue.Add(mh);
+
+                Message mm = m.Clone();
+                mm.Handler = "收到：" + session.iPEnd;
 
 
-                //MyMessage m = new MyMessage();
-                //m.Read(bytes);
+                session.Send(mm);
+                ////MyMessage m = new MyMessage();
+                ////m.Read(bytes);
 
-                string ss = Encoding.Default.GetString(m.Param[0].ToByteArray());
+                //string ss = Encoding.Default.GetString(m.Param[0].ToByteArray());
 
-                Console.WriteLine("session:" + session.SessionId + "message:" + m.ToString()+" param:"+m.Param.Count);
-                Console.WriteLine(ss);
+                //Console.WriteLine("session:" + session.SessionId + "message:" + m.ToString() + " param:" + m.Param.Count);
+                //Console.WriteLine(ss);
 
             };
 
@@ -100,7 +156,23 @@ namespace Server
 
 
 
-        public virtual void Send(SocketAsyncEventArgs sae, MyMessage message) { }
+        public virtual void Send(Session session, Message message) { }
+
+
+
+
+        public class AA
+        {
+            public class BB
+            {
+                public string name;
+                public object o;
+
+            }
+
+        }
+
+
 
     }
 

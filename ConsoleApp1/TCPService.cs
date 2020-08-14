@@ -1,4 +1,5 @@
-﻿using Server;
+﻿using Google.Protobuf;
+using Server;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -162,7 +163,7 @@ namespace Server
         /// </summary>
         /// <param name="e"></param>
         /// <param name="data"></param>
-        public  void Send(SocketAsyncEventArgs e, byte[] data)
+        public void Send(SocketAsyncEventArgs e, byte[] data)
         {
             if (e.SocketError == SocketError.Success)
             {
@@ -187,9 +188,9 @@ namespace Server
         }
 
 
-        public override void Send(SocketAsyncEventArgs sae, MyMessage message)
+        public override void Send(Session session, Message message)
         {
-            Send(sae, message.ToBytes());
+            Send(session.args, message.ToByteArray());
         }
 
 

@@ -30,6 +30,17 @@ namespace WebApplication2.Controllers
             return View();
         }
 
+
+
+        public IActionResult Contact(string name)
+        {
+
+
+            ViewData["Message"] = name;
+
+            return View();
+        }
+
         public IActionResult Privacy()
         {
             return View();
@@ -56,7 +67,24 @@ namespace WebApplication2.Controllers
         }
 
 
+        public IActionResult ApiTest(string name,string c)
+        {
 
+
+
+
+            //return new JsonResult(name);
+            ContentResult content = new ContentResult();
+            content.Content = name;
+            return content;
+
+
+
+
+
+
+
+        }
 
 
 

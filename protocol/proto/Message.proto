@@ -1,0 +1,17 @@
+syntax ="proto3";
+
+message Message
+{
+	int32 id=1;
+	string handler=2;
+	string method=3;
+
+	message Param
+	{
+		string name=1;
+		bytes data=2;
+	}
+
+	repeated Param params=4;
+}
+

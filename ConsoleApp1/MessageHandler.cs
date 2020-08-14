@@ -1,5 +1,9 @@
-﻿using System;
+﻿using Google.Protobuf;
+using Google.Protobuf.Reflection;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -10,9 +14,9 @@ namespace Server
     {
 
         Session session;
-        MyMessage message;
+        Message message;
 
-        public MessageHandler(Session session, MyMessage message)
+        public MessageHandler(Session session, Message message)
         {
             this.session = session;
             this.message = message;
@@ -24,18 +28,19 @@ namespace Server
         /// <param name="o"></param>
         public void Do(Object o)
         {
-            IHandler handler = null;
 
-
-            MethodInfo methodInfo = handler.GetType().GetMethod(message.method);
-
-
-            if (methodInfo != null)
+            Type t = Type.GetType("Server.Handlers." + message.Handler);
+            Console.WriteLine(t);
+            
+            if (t != null)
             {
-                ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+                object obj = Activator.CreateInstance(t);
 
-                methodInfo.Invoke(handler, new Object[] { });
+                Dictionary<Type, object> pairs = message.ReadParam();
 
+                MethodInfo method = t.GetMethod(message.Method, pairs.Keys.ToArray());
+                if (method != null)
+                    method.Invoke(obj, pairs.Values.ToArray());
             }
         }
     }
