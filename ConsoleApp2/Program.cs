@@ -15,7 +15,11 @@ namespace ConsoleApp2
         {
             Console.WriteLine("Hello World!");
 
+
+
             UDPTest();
+
+
 
 
 
@@ -59,19 +63,30 @@ namespace ConsoleApp2
 
         static void UDPTest()
         {
+            Dictionary<int, Socket> sendList = new Dictionary<int, Socket>();
 
-            Socket socketSend = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPAddress ip = IPAddress.Parse("127.0.0.1");
-            socketSend.Connect(ip, 10086);
+            int port = 60852;
 
-            Thread thread = new Thread(new ParameterizedThreadStart(Reviec));
-            thread.Start(socketSend);
+            for (int i = 0; i < 10; i++)
+            {
+                IPAddress ip = IPAddress.Parse("127.0.0.1");
 
-            Thread.Sleep(100);
+                Socket socketSend = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socketSend.Connect(ip, 10086);
 
-            byte[] bb = new byte[1];
-            int bbb = socketSend.Send(bb);
-            Console.WriteLine("send:" + bbb);
+                Socket revice = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                revice.Bind(socketSend.LocalEndPoint);
+
+
+                Thread thread = new Thread(new ParameterizedThreadStart(Reviec));
+                thread.Start(revice);
+
+
+
+                sendList.Add(port, socketSend);
+                Thread.Sleep(100);
+                port++;
+            }
 
 
             while (true)
@@ -87,20 +102,22 @@ namespace ConsoleApp2
                 tt.Id = 222;
                 tt.Name = "test:" + ss;
 
-
-                for (int i = 0; i < 1024; i++)
-                {
-                    tt.Name += "test:" + ss;
-                }
-
-
                 message.AddParam(tt);
+                foreach (var item in sendList)
+                {
 
+                    message.Id = item.Key;
 
-                int iii = socketSend.Send(message.ToByteArray());
-                Console.WriteLine("send:" + iii);
+                    Thread.Sleep(100);
+                    int iii = item.Value.Send(message.ToByteArray());
+                    Console.WriteLine("send:" + iii);
+                }
             }
         }
+
+
+
+
 
 
 
@@ -108,11 +125,13 @@ namespace ConsoleApp2
         {
             Socket ss = (Socket)obj;
             byte[] bytes = new byte[1024];
+            Console.WriteLine(ss.LocalEndPoint);
+
+            EndPoint endPoint = new IPEndPoint(IPAddress.Any, 0);
 
             while (true)
             {
-
-                int i = ss.Receive(bytes);
+                int i = ss.ReceiveFrom(bytes, ref endPoint);
                 if (i > 0)
                 {
                     byte[] bb = new byte[i];

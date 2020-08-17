@@ -9,9 +9,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-namespace Server
+namespace Server.Core
 {
-    class TCPService : Service
+    class TCPService : IService
     {
         private Socket socket;
 
@@ -19,7 +19,7 @@ namespace Server
 
         public int maxConnect = 100;
 
-        public Action<Session, byte[]> receiveMsg;
+        public Action<ISession, byte[]> receiveMsg;
         public Action<string> onError;
         public Action<string> onConnect;
         public Action<string> onColse;
@@ -27,10 +27,7 @@ namespace Server
 
         private int currConnect = 0;
         //TODO: session回收
-        public ConcurrentDictionary<string, Session> sessions = new ConcurrentDictionary<string, Session>();
-
-
-
+        public ConcurrentDictionary<string, ISession> sessions = new ConcurrentDictionary<string, ISession>();
 
         SocketAsyncEventArgsPool socketPool;
         public TCPService()
@@ -61,7 +58,7 @@ namespace Server
         }
 
 
-        public override void Start()
+        public void Start()
         {
             Init();
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -100,10 +97,9 @@ namespace Server
 
                     SocketAsyncEventArgs sae = socketPool.Pop();
 
-                    Session session = new Session(this, sae, acceptSocket);
+                    ISession session = new TCPSession(this, sae, acceptSocket);
                     if (!sessions.TryAdd(session.SessionId, session))
                         L.i("add session fali: id:" + session.SessionId);
-
 
                     sae.UserToken = session;
                     int bufferSize = 1024 * 4;
@@ -135,7 +131,7 @@ namespace Server
             {
                 if (e.BytesTransferred > 0)
                 {
-                    Session session = (Session)e.UserToken;
+                    TCPSession session = (TCPSession)e.UserToken;
                     if (session.socket.Available == 0)
                     {
                         byte[] data = new byte[e.BytesTransferred];
@@ -188,9 +184,12 @@ namespace Server
         }
 
 
-        public override void Send(Session session, Message message)
+        public void Send(ISession session, Message message)
         {
-            Send(session.args, message.ToByteArray());
+
+            TCPSession tCPSession = session as TCPSession;
+
+            Send(tCPSession.args, message.ToByteArray());
         }
 
 
@@ -241,7 +240,7 @@ namespace Server
 
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
-            Session s = e.UserToken as Session;
+            TCPSession s = e.UserToken as TCPSession;
             // close the socket associated with the client
             try
             {
@@ -256,5 +255,6 @@ namespace Server
             Interlocked.Decrement(ref currConnect);
         }
 
+     
     }
 }

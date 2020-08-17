@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 
-namespace Server
+namespace Server.Core
 {
     public class SocketAsyncEventArgsPool
     {

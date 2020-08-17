@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Server.Core;
 
 namespace Server
 {
@@ -84,7 +85,7 @@ namespace Server
 
             UDPService service = new UDPService("127.0.0.1", 10086);
 
-            service.receiveMsg = (Session session, byte[] bytes) =>
+            service.receiveMsg = (ISession session, byte[] bytes) =>
             {
 
 
@@ -96,7 +97,7 @@ namespace Server
                 messageQueue.Add(mh);
 
                 Message mm = m.Clone();
-                mm.Handler = "收到：" + session.iPEnd;
+                mm.Handler = "收到：" + ((UDPSession)session).iPEnd;
 
 
                 session.Send(mm);
@@ -145,35 +146,4 @@ namespace Server
 
 
     }
-
-
-    public class Service
-    {
-        public virtual void Start()
-        {
-
-        }
-
-
-
-        public virtual void Send(Session session, Message message) { }
-
-
-
-
-        public class AA
-        {
-            public class BB
-            {
-                public string name;
-                public object o;
-
-            }
-
-        }
-
-
-
-    }
-
 }

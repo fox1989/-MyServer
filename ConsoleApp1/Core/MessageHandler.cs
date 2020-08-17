@@ -7,16 +7,16 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace Server
+namespace Server.Core
 {
 
     public class MessageHandler
     {
 
-        Session session;
+        ISession session;
         Message message;
 
-        public MessageHandler(Session session, Message message)
+        public MessageHandler(ISession session, Message message)
         {
             this.session = session;
             this.message = message;
