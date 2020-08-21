@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ConsoleApp1\Server.csproj" />
     <ProjectReference Include="..\protocol\protocol.csproj" />
   </ItemGroup>
 

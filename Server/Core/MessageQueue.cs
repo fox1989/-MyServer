@@ -6,19 +6,16 @@ using System.Threading;
 
 namespace Server.Core
 {
+
+    /// <summary>
+    /// 消息队列
+    /// </summary>
     public class MessageQueue
     {
-
-
-        Dictionary<string, IHandler> keyValuePairs = new Dictionary<string, IHandler>();//TODO:
-
-
-
         Queue<MessageHandler> handlers = new Queue<MessageHandler>();
 
-        int maxCount;
-
-        bool isRun = false;
+        private int maxCount;
+        private bool isRun = false;
 
         public MessageQueue(int maxMessages, int maxThread)
         {
@@ -48,40 +45,56 @@ namespace Server.Core
             }
         }
 
-
+        private Thread thread;
         public void Start()
         {
             isRun = true;
-            Thread thread = new Thread(new ThreadStart(Run));
+            thread = new Thread(new ThreadStart(Run));
             thread.Start();
         }
 
+        public void Puase()
+        {
+            isRun = false;
+        }
+
+
+        public void Play()
+        {
+            isRun = true;
+        }
+
+
+        public void Stop()
+        {
+            isRun = false;
+            if (thread != null)
+                thread.Abort();
+
+            
+        }
 
         void Run()
         {
             while (true)
             {
 
-                if (ThreadPool.ThreadCount >= maxCount)
+                if (ThreadPool.ThreadCount >= maxCount && isRun)
                 {
                     Thread.Sleep(10);
                     continue;
                 }
-
 
                 MessageHandler handler = Get();
 
                 if (handler != null)
                 {
                     ThreadPool.QueueUserWorkItem(handler.Do);
-                   // Handler handler = new Handler(message,);
 
                 }
                 Thread.Sleep(10);
             }
         }
-
-
     }
 }
 

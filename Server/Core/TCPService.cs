@@ -14,6 +14,7 @@ namespace Server.Core
     class TCPService : IService
     {
         private Socket socket;
+        private int currConnect = 0;
 
         public IPEndPoint iPEndPoint;
 
@@ -25,7 +26,6 @@ namespace Server.Core
         public Action<string> onColse;
 
 
-        private int currConnect = 0;
         //TODO: session回收
         public ConcurrentDictionary<string, ISession> sessions = new ConcurrentDictionary<string, ISession>();
 
@@ -46,36 +46,64 @@ namespace Server.Core
 
         public void Init()
         {
-            socketPool = new SocketAsyncEventArgsPool(100);
+            socketPool = new SocketAsyncEventArgsPool(maxConnect);
 
             for (int i = 0; i < maxConnect; i++)
             {
                 SocketAsyncEventArgs sae = new SocketAsyncEventArgs();
                 sae.Completed += new EventHandler<SocketAsyncEventArgs>(IOCompleted);
                 socketPool.Push(sae);
-
             }
         }
 
+        private Thread checkThread;
 
         public void Start()
         {
             Init();
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.Bind(iPEndPoint);
-            socket.Listen(10);
-
+            socket.Listen(maxConnect);
             SocketAsyncEventArgs socketAsyncEventArgs = new SocketAsyncEventArgs();
-
             socketAsyncEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnAcceptCompleted);
             if (!socket.AcceptAsync(socketAsyncEventArgs))
                 OnAccept(socketAsyncEventArgs);
 
-
-            //Thread thread = new Thread(new ThreadStart(Run));
-            //thread.Start();
+            checkThread = new Thread(new ThreadStart(CheckSessions));
+            checkThread.Start();
         }
 
+
+        public void Stop()
+        {
+            if (checkThread != null)
+                checkThread.Abort();
+
+            foreach (var item in sessions)
+            {
+                TCPSession session = (TCPSession)item.Value;
+                CloseClientSocket(session.args);
+            }
+
+        }
+
+        /// <summary>
+        /// session回收
+        /// </summary>
+        void CheckSessions()
+        {
+            while (true)
+            {
+                Thread.Sleep(100000);
+                foreach (string key in sessions.Keys)
+                {
+                    TCPSession session = (TCPSession)sessions[key];
+                    ISession session1 = null;
+                    if (!session.socket.Connected)
+                        sessions.Remove(key, out session1);
+                }
+            }
+        }
 
 
         #region 得到连接
@@ -167,7 +195,6 @@ namespace Server.Core
                 if (s.Connected)
                 {
                     Array.Copy(data, 0, e.Buffer, 0, data.Length);//设置发送数据
-                    //e.SetBuffer(data, 0, data.Length); //设置发送数据
 
                     if (!s.SendAsync(e))//投递发送请求，这个函数有可能同步发送出去，这时返回false，并且不会引发SocketAsyncEventArgs.Completed事件
                     {
@@ -186,14 +213,9 @@ namespace Server.Core
 
         public void Send(ISession session, Message message)
         {
-
             TCPSession tCPSession = session as TCPSession;
-
             Send(tCPSession.args, message.ToByteArray());
         }
-
-
-
 
         private void OnSendCompleted(SocketAsyncEventArgs e)
         {
@@ -255,6 +277,5 @@ namespace Server.Core
             Interlocked.Decrement(ref currConnect);
         }
 
-     
     }
 }

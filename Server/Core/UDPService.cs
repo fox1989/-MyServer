@@ -15,7 +15,9 @@ namespace Server.Core
     class UDPService : IService
     {
         private Socket socket;
-
+        /// <summary>
+        /// 发送socket
+        /// </summary>
         private Socket sendSocket;
 
         public IPEndPoint iPEndPoint;
@@ -24,19 +26,13 @@ namespace Server.Core
 
         public Action<ISession, byte[]> receiveMsg;
 
-        public UDPService()
-        {
-
-        }
-
+     
 
         public UDPService(string ip, int port)
         {
             IPAddress iPAddress = IPAddress.Parse(ip);
             iPEndPoint = new IPEndPoint(iPAddress, port);
         }
-
-
 
         public void Init()
         {
@@ -63,8 +59,6 @@ namespace Server.Core
             socket.Bind(iPEndPoint);
 
             sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            sendSocket.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 10085));
-
 
             StateObject so = new StateObject();
             socket.BeginReceiveFrom(so.buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ref so.remote, new AsyncCallback(OnReceive), so);
@@ -75,14 +69,10 @@ namespace Server.Core
         void OnReceive(IAsyncResult asyncResult)
         {
             StateObject so = asyncResult.AsyncState as StateObject;
-            //EndPoint sender = new IPEndPoint(IPAddress.Any, 0);
             int len = -1;
             try
             {
-
                 len = socket.EndReceiveFrom(asyncResult, ref so.remote);
-
-                L.i("Receive length:" + len);
 
                 if (len > 0)
                 {
@@ -97,22 +87,17 @@ namespace Server.Core
                         so.datas.Clear();
                     }
                 }
-
-                //RaiseDataReceived(so);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                //TODO 处理异常
-                //RaiseOtherException(so);
+                
             }
             finally
             {
                 socket.BeginReceiveFrom(so.buffer, 0, so.buffer.Length, SocketFlags.None,
                 ref so.remote, new AsyncCallback(OnReceive), so);
             }
-
-
         }
 
 
@@ -126,13 +111,7 @@ namespace Server.Core
         {
             try
             {
-
-
-
                 L.i("send to:" + iPEnd);
-
-
-
                 sendSocket.BeginSendTo(data, 0, data.Length, SocketFlags.None, iPEnd, new AsyncCallback(OnSendEnd), sendSocket);
             }
             catch (Exception e)
@@ -154,13 +133,6 @@ namespace Server.Core
         public void Send(ISession session, Message message)
         {
             UDPSession uDPSession = session as UDPSession;
-
-            //IPEndPoint ip = uDPSession.iPEnd as IPEndPoint;
-
-            //ip.Port = message.Id;
-
-
-            //uDPSession.iPEnd = ip;
             SendTo(uDPSession.iPEnd, message.ToByteArray());
         }
 

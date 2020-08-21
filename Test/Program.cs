@@ -1,5 +1,4 @@
 ﻿using Google.Protobuf;
-using Server;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -104,11 +103,6 @@ namespace ConsoleApp2
         }
 
 
-
-
-
-
-
         static void Reviec(Object obj)
         {
             Socket ss = (Socket)obj;
@@ -120,6 +114,7 @@ namespace ConsoleApp2
             while (true)
             {
                 int i = ss.ReceiveFrom(bytes, ref endPoint);
+                Console.WriteLine("Reviec:"+endPoint);
                 if (i > 0)
                 {
                     byte[] bb = new byte[i];
